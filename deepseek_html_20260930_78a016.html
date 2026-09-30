@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>کیوسورت آنلاین | Q-Sort</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Vazirmatn","IRANSans","IRANYekan",Tahoma,"Segoe UI",sans-serif;
+    background:#f4f6fa;color:#1f2430;font-size:14px;line-height:1.75;
+  }
+  .topbar{
+    position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+    gap:12px;padding:10px 16px;background:#fff;border-bottom:1px solid #e2e5ea;flex-wrap:wrap;
+  }
+  .brand{font-weight:700;font-size:16px}
+  .tabs{display:flex;gap:6px;background:#f1f3f7;padding:4px;border-radius:10px}
+  .tab{border:0;background:transparent;padding:7px 14px;border-radius:7px;cursor:pointer;font:inherit;color:#4b5563}
+  .tab.active{background:#fff;color:#1f2430;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .wrap{max-width:1400px;margin:0 auto;padding:16px}
+  .view{display:none}.view.active{display:block}
+  .card{background:#fff;border:1px solid #e2e5ea;border-radius:14px;padding:16px;margin-bottom:14px}
+  .card h2{font-size:15px;margin:0 0 8px}
+  .hint{color:#6b7280;font-size:12.5px;margin:0 0 10px}
+  textarea,input[type=text],input[type=url],input[type=password],input[type=number]{
+    width:100%;padding:10px;border:1px solid #d6dae2;border-radius:10px;font:inherit;
+    background:#fbfcfe;resize:vertical;color:inherit;
+  }
+  textarea{min-height:230px;line-height:2}
+  textarea:focus,input:focus{outline:none;border-color:#2563eb;background:#fff}
+  .btn{
+    border:1px solid #d6dae2;background:#fff;color:#1f2430;padding:9px 16px;border-radius:10px;
+    cursor:pointer;font:inherit;transition:.12s;
+  }
+  .btn:hover{background:#f3f5f9}
+  .btn.primary{background:#2563eb;border-color:#2563eb;color:#fff;font-weight:600}
+  .btn.primary:hover{background:#1d4ed8}
+  .btn.danger{color:#b42318;border-color:#f3c2c0}
+  .btn.danger:hover{background:#fdf2f2}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .row.mt{margin-top:10px}
+
+  .pool{
+    display:flex;flex-wrap:wrap;gap:8px;padding:12px;background:#fff;border:1px solid #e2e5ea;
+    border-radius:12px;min-height:92px;transition:.15s;
+  }
+  .pool.dragover{border-color:#2563eb;background:#f0f6ff}
+  .pool .empty{color:#9aa3b0;font-size:13px;margin:auto}
+
+  .chip{
+    position:relative;
+    padding:7px 11px;border-radius:9px;background:#fff;border:1px solid #d6dae2;cursor:pointer;
+    font-size:13px;line-height:1.65;max-width:300px;user-select:none;transition:.12s;
+    word-break:break-word;
+  }
+  .chip.with-dot{padding-right:24px}
+  .chip:hover{border-color:#9db6e8;background:#f7faff}
+  .chip.selected{border-color:#2563eb;background:#e8f0ff;box-shadow:0 0 0 2px #bfd5ff}
+  .chip.in-col{width:100%;max-width:none;font-size:11.5px;padding:6px 8px;border-radius:8px}
+  .chip.in-col.with-dot{padding-right:20px}
+
+  .pdot{
+    position:absolute;top:50%;right:8px;transform:translateY(-50%);
+    width:9px;height:9px;border-radius:50%;flex-shrink:0;
+  }
+  .chip.in-col .pdot{width:7px;height:7px;right:6px}
+  .pdot.agree{background:#10b981;box-shadow:0 0 0 2px #d1fae5}
+  .pdot.neutral{background:#9ca3af;box-shadow:0 0 0 2px #e5e7eb}
+  .pdot.disagree{background:#ef4444;box-shadow:0 0 0 2px #fee2e2}
+
+  .presort-board{display:flex;gap:12px;align-items:flex-start}
+  .presort-col{
+    flex:1 1 0;min-width:180px;background:#fff;border:1px solid #e2e5ea;border-radius:12px;
+    padding:10px;transition:.15s;display:flex;flex-direction:column;gap:6px;
+  }
+  .presort-col.over{border-color:#2563eb;background:#f0f6ff}
+  .presort-col.agree{border-top:3px solid #10b981}
+  .presort-col.neutral{border-top:3px solid #9ca3af}
+  .presort-col.disagree{border-top:3px solid #ef4444}
+  .presort-col.met{box-shadow:0 0 0 2px #d1fae5 inset}
+  .presort-col.unmet{box-shadow:0 0 0 2px #fee2e2 inset}
+
+  .presort-head{
+    display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:13px;
+    padding:4px 6px;border-radius:8px;
+  }
+  .presort-head.agree{color:#067647}
+  .presort-head.neutral{color:#4b5563}
+  .presort-head.disagree{color:#b42318}
+  .presort-head .count-wrap{display:inline-flex;align-items:center;gap:6px;font-weight:500;font-size:12px}
+
+  .min-bar{height:6px;background:#e8ebf0;border-radius:99px;overflow:hidden;margin:2px 4px 6px}
+  .min-bar > i{display:block;height:100%;background:#9ca3af;transition:.2s}
+  .min-bar.agree > i{background:#10b981}
+  .min-bar.disagree > i{background:#ef4444}
+  .min-bar.neutral > i{background:#9ca3af}
+
+  .min-note{font-size:11.5px;color:#6b7280;padding:0 6px 6px}
+  .min-note.ok{color:#067647}
+  .min-note.bad{color:#b42318;font-weight:600}
+
+  .presort-body{display:flex;flex-direction:column;gap:6px;min-height:80px}
+  .presort-body .chip{max-width:none;width:100%;font-size:12px;padding:6px 9px}
+  .presort-body .chip.with-dot{padding-right:22px}
+  .presort-body .empty{color:#9aa3b0;font-size:12px;text-align:center;padding:14px 6px}
+
+  .board-scroll{overflow-x:auto;padding-bottom:10px}
+  .board{display:flex;gap:7px;align-items:flex-start;min-width:min-content}
+  .qcol{
+    flex:0 0 134px;background:#fff;border:1px solid #e2e5ea;border-radius:12px;padding:7px;
+    display:flex;flex-direction:column;gap:6px;transition:.15s;
+  }
+  .qcol.over{border-color:#2563eb;background:#f0f6ff}
+  .qcol-head{
+    display:flex;justify-content:space-between;align-items:center;padding:4px 7px;border-radius:8px;
+    font-size:12px;font-weight:700;
+  }
+  .qcol-head.neg{background:#fdecec;color:#b42318}
+  .qcol-head.zero{background:#eef0f4;color:#4b5563}
+  .qcol-head.pos{background:#e7f6ee;color:#067647}
+  .qcount{font-weight:500;opacity:.85;font-size:11px}
+  .qcol-body{display:flex;flex-direction:column;gap:6px;min-height:40px}
+  .slot{min-height:32px;border-radius:9px;border:1px dashed #dfe3ea;background:#fafbfd}
+  .slot.filled{border:0;background:transparent;min-height:0;padding:0}
+
+  .progress{font-size:13px;color:#4b5563;display:flex;align-items:center;gap:8px}
+  .bar{flex:1;height:7px;background:#e8ebf0;border-radius:99px;overflow:hidden;min-width:120px}
+  .bar > i{display:block;height:100%;background:#2563eb;width:0;transition:.2s}
+
+  .steps{font-size:12.5px;color:#4b5563;background:#f7f9fc;border:1px dashed #dbe1ea;border-radius:10px;padding:10px 14px;margin-bottom:12px}
+  .steps b{color:#1f2430}
+  .steps .req{color:#b42318;font-weight:700}
+
+  .filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
+  .filters .lbl{font-size:12.5px;color:#6b7280;margin-left:4px}
+  .fbtn{
+    border:1px solid #d6dae2;background:#fff;color:#4b5563;padding:5px 12px;border-radius:99px;
+    cursor:pointer;font:inherit;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;
+  }
+  .fbtn:hover{background:#f3f5f9}
+  .fbtn.active{background:#1f2430;color:#fff;border-color:#1f2430}
+  .fbtn .pdot{position:static;transform:none}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{border-bottom:1px solid #eceff4;padding:8px;text-align:right;vertical-align:top}
+  th{background:#f7f9fc;font-weight:600;white-space:nowrap}
+  .tbl-wrap{overflow:auto;max-height:420px;border:1px solid #eceff4;border-radius:10px}
+
+  .toast{
+    position:fixed;bottom:24px;right:50%;transform:translate(50%,20px);background:#1f2430;color:#fff;
+    padding:10px 18px;border-radius:10px;font-size:13px;opacity:0;transition:.25s;z-index:999;pointer-events:none;
+  }
+  .toast.show{opacity:1;transform:translate(50%,0)}
+  .toast.err{background:#b42318}
+  .toast.ok{background:#067647}
+  .done-box{text-align:center;padding:36px 16px}
+  .done-box .ico{font-size:52px;line-height:1}
+  .done-box h3{margin:12px 0 6px}
+  .muted{color:#6b7280}
+  .dist-preview{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .dist-preview span{
+    background:#f1f3f7;border-radius:8px;padding:4px 10px;font-size:12px;border:1px solid #e2e5ea;
+  }
+  .dist-preview span b{color:#2563eb}
+  .err-text{color:#b42318;font-size:12.5px;margin-top:6px;min-height:18px}
+  .stage-badge{
+    display:inline-block;background:#e8f0ff;color:#1d4ed8;border-radius:99px;
+    padding:2px 10px;font-size:11.5px;font-weight:700;margin-bottom:6px;
+  }
+  .check-row{display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 0}
+  .check-row input{width:18px;height:18px;accent-color:#2563eb;cursor:pointer}
+
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+  .modal-backdrop{
+    position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:200;
+    display:flex;align-items:center;justify-content:center;padding:16px;
+  }
+  .modal{
+    background:#fff;border-radius:14px;padding:22px;max-width:400px;width:100%;
+    box-shadow:0 20px 60px rgba(0,0,0,.25);
+  }
+  .modal h3{font-size:15px;margin:0 0 6px}
+  .modal .lock-ico{font-size:38px;text-align:center;line-height:1;margin-bottom:6px}
+
+  .lock-note{
+    display:flex;gap:8px;align-items:flex-start;background:#fff8e6;border:1px solid #ffe4a3;
+    border-radius:10px;padding:10px 12px;font-size:12.5px;color:#7a4d00;margin-top:8px;
+  }
+  .lock-note b{color:#5c3a00}
+
+  .ready-msg{
+    margin-top:10px;padding:10px 14px;border-radius:10px;font-size:13px;
+    border:1px dashed #dbe1ea;background:#f7f9fc;
+  }
+  .ready-msg.bad{border-color:#f3c2c0;background:#fdf2f2;color:#b42318}
+  .ready-msg.ok{border-color:#a7f3d0;background:#ecfdf5;color:#067647}
+  .ready-msg ul{margin:6px 0 0;padding-right:18px}
+
+  .loading-box{
+    text-align:center;padding:80px 20px;
+  }
+  .spinner{
+    width:44px;height:44px;border:4px solid #e2e5ea;border-top-color:#2563eb;
+    border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .link-box{
+    display:flex;gap:8px;align-items:flex-start;margin-top:8px;
+    background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:10px 12px;
+  }
+  .link-box .info{font-size:12.5px;color:#075985;flex:1}
+  .link-box b{color:#0369a1}
+
+  @media(max-width:760px){
+    .presort-board{flex-direction:column}
+    .presort-col{width:100%;min-width:0}
+    .qcol{flex:0 0 116px}
+    .chip{max-width:100%}
+    .two-col{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">🧩 کیوسورت آنلاین</div>
+  <nav class="tabs">
+    <button class="tab active" data-view="participant">شرکت‌کننده</button>
+    <button class="tab" data-view="researcher">پژوهشگر</button>
+  </nav>
+</div>
+
+<div class="wrap">
+
+  <!-- ================= PARTICIPANT ================= -->
+  <section id="view-participant" class="view active">
+
+    <div id="loadingBox" class="card" style="display:none">
+      <div class="loading-box">
+        <div class="spinner"></div>
+        <h3>در حال بارگذاری پرسشنامه...</h3>
+        <p class="muted">لطفاً چند لحظه صبر کنید.</p>
+      </div>
+    </div>
+
+    <div id="noConfig" class="card" style="display:none">
+      <h2>هنوز گویه‌ای بارگذاری نشده است</h2>
+      <p class="hint">لطفاً از پژوهشگر بخواهید لینک اختصاصی این پژوهش را برایتان بفرستد.</p>
+    </div>
+
+    <div id="participantApp" style="display:none">
+
+      <!-- STAGE 1: PRESORT -->
+      <div id="stagePresort" style="display:none">
+        <div class="card">
+          <div class="row" style="justify-content:space-between">
+            <div>
+              <span class="stage-badge">مرحله ۱ از ۲ — پیش‌دسته‌بندی</span>
+              <h2 id="pTitle1" style="margin:0">مرتب‌سازی مقدماتی</h2>
+              <div class="hint" style="margin:4px 0 0">هر گویه را با توجه به نظر خود در یکی از سه دسته «موافق»، «بی‌نظر» یا «مخالف» قرار دهید.</div>
+            </div>
+            <div style="min-width:220px">
+              <input type="text" id="pName" placeholder="نام یا کد شرکت‌کننده (اختیاری)">
+            </div>
+          </div>
+        </div>
+
+        <div class="steps">
+          <b>راهنما:</b> روی گویه کلیک کنید تا انتخاب شود (رنگ آبی)، سپس روی یکی از سه سبد کلیک کنید. برای برگرداندن گویه، روی آن در سبد کلیک کنید. امکان Drag &amp; Drop هم هست.
+          <br>
+          <span id="minRequirementText"></span>
+        </div>
+
+        <div class="card">
+          <div class="row" style="justify-content:space-between;margin-bottom:10px">
+            <div class="progress">
+              <span id="progressText1">۰ از ۵۰</span>
+              <span class="bar"><i id="progressBar1"></i></span>
+            </div>
+            <button class="btn danger" id="resetPresort">شروع مجدد</button>
+          </div>
+          <div class="pool" id="presortPool"></div>
+        </div>
+
+        <div class="card">
+          <div class="presort-board">
+            <div class="presort-col agree" data-cat="agree" id="colAgree">
+              <div class="presort-head agree">
+                <span>موافق</span>
+                <span class="count-wrap"><span id="countAgree">۰</span></span>
+              </div>
+              <div class="min-bar agree" id="minBarAgree"><i style="width:0%"></i></div>
+              <div class="min-note" id="minNoteAgree"></div>
+              <div class="presort-body" id="bodyAgree" data-cat="agree"></div>
+            </div>
+            <div class="presort-col neutral" data-cat="neutral" id="colNeutral">
+              <div class="presort-head neutral">
+                <span>بی‌نظر</span>
+                <span class="count-wrap"><span id="countNeutral">۰</span></span>
+              </div>
+              <div class="min-bar neutral"><i style="width:0%"></i></div>
+              <div class="min-note">بدون حداقل/حداکثر</div>
+              <div class="presort-body" id="bodyNeutral" data-cat="neutral"></div>
+            </div>
+            <div class="presort-col disagree" data-cat="disagree" id="colDisagree">
+              <div class="presort-head disagree">
+                <span>مخالف</span>
+                <span class="count-wrap"><span id="countDisagree">۰</span></span>
+              </div>
+              <div class="min-bar disagree" id="minBarDisagree"><i style="width:0%"></i></div>
+              <div class="min-note" id="minNoteDisagree"></div>
+              <div class="presort-body" id="bodyDisagree" data-cat="disagree"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="text-align:center">
+          <button class="btn primary" id="toQsortBtn" style="padding:12px 40px;font-size:15px" disabled>
+            ادامه به مرحله چینش نهایی ➜
+          </button>
+          <div class="ready-msg" id="readyMsg">در حال بررسی شرایط...</div>
+        </div>
+      </div>
+
+      <!-- STAGE 2: QSORT -->
+      <div id="stageQsort" style="display:none">
+        <div class="card">
+          <div class="row" style="justify-content:space-between">
+            <div>
+              <span class="stage-badge">مرحله ۲ از ۲ — چینش نهایی</span>
+              <h2 id="pTitle2" style="margin:0">چینش اجباری کیو</h2>
+              <div class="hint" style="margin:4px 0 0">۵۰ گویه را در ۹ ستون از ۴− تا ۴+ قرار دهید. نقطهٔ رنگی هر گویه، دستهٔ مرحله قبل را نشان می‌دهد.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="steps">
+          <b>راهنما:</b> روی گویه کلیک کنید و سپس روی ستون دلخواه بزنید (Drag &amp; Drop هم ممکن است). ظرفیت هر ستون مشخص است و باید دقیقاً پر شود.
+        </div>
+
+        <div class="card">
+          <div class="row" style="justify-content:space-between;margin-bottom:10px">
+            <div class="progress">
+              <span id="progressText2">۰ از ۵۰</span>
+              <span class="bar"><i id="progressBar2"></i></span>
+            </div>
+            <div class="row">
+              <button class="btn" id="backToPresort">◀ بازگشت به پیش‌دسته‌بندی</button>
+              <button class="btn danger" id="resetQsort">شروع مجدد</button>
+            </div>
+          </div>
+
+          <div class="filters" id="filterBar">
+            <span class="lbl">نمایش:</span>
+            <button class="fbtn active" data-filter="all">همه</button>
+            <button class="fbtn" data-filter="agree"><span class="pdot agree"></span>موافق</button>
+            <button class="fbtn" data-filter="neutral"><span class="pdot neutral"></span>بی‌نظر</button>
+            <button class="fbtn" data-filter="disagree"><span class="pdot disagree"></span>مخالف</button>
+          </div>
+
+          <div class="pool" id="pool"></div>
+        </div>
+
+        <div class="card">
+          <div class="board-scroll">
+            <div class="board" id="board"></div>
+          </div>
+        </div>
+
+        <div class="card" style="text-align:center">
+          <button class="btn primary" id="submitBtn" style="padding:12px 40px;font-size:15px" disabled>ثبت نهایی مرتب‌سازی</button>
+          <div class="hint" style="margin-top:8px">پس از ثبت، امکان تغییر پاسخ وجود ندارد.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="doneView" class="card" style="display:none">
+      <div class="done-box">
+        <div class="ico">✅</div>
+        <h3>پاسخ شما با موفقیت ثبت شد</h3>
+        <p class="muted">از مشارکت شما سپاسگزاریم.</p>
+        <div class="row" style="justify-content:center;margin-top:16px">
+          <button class="btn" id="downloadMine">دانلود پاسخ من (CSV)</button>
+          <button class="btn" id="newParticipant">ثبت پاسخ جدید</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= RESEARCHER ================= -->
+  <section id="view-researcher" class="view">
+    <div class="card">
+      <h2>۱) عنوان پژوهش</h2>
+      <input type="text" id="titleInput" placeholder="مثال: الگوهای ذهنی دربارهٔ ...">
+    </div>
+
+    <div class="card">
+      <h2>۲) بارگذاری ۵۰ گویه</h2>
+      <p class="hint">هر گویه را در یک خط جداگانه بنویسید یا از Excel کپی و اینجا Paste کنید.</p>
+      <textarea id="itemsInput" placeholder="گویه ۱&#10;گویه ۲&#10;گویه ۳&#10;..."></textarea>
+      <div class="row mt">
+        <span class="muted" id="itemCount">۰ گویه</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>۳) توزیع اجباری (ظرفیت ستون‌ها)</h2>
+      <p class="hint">۹ عدد، به ترتیب از <b>۴−</b> تا <b>۴+</b>، جدا شده با کاما. مجموع باید برابر تعداد گویه‌ها باشد.</p>
+      <input type="text" id="distInput" value="2,4,6,8,10,8,6,4,2">
+      <div class="dist-preview" id="distPreview"></div>
+      <div class="err-text" id="distError"></div>
+      <div class="row mt">
+        <button class="btn" id="presetDefault">توزیع پیش‌فرض ۵۰ گویه‌ای</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>۴) تنظیمات پیش‌دسته‌بندی</h2>
+      <label class="check-row">
+        <input type="checkbox" id="presortToggle" checked>
+        <span>فعال‌سازی مرحله پیش‌دسته‌بندی (موافق / بی‌نظر / مخالف) پیش از چینش نهایی</span>
+      </label>
+      <div class="two-col" style="margin-top:10px">
+        <div>
+          <label class="hint" style="display:block;margin-bottom:4px">حداقل گویه در سبد «موافق»</label>
+          <input type="number" id="minAgreeInput" min="0" max="100" value="20">
+        </div>
+        <div>
+          <label class="hint" style="display:block;margin-bottom:4px">حداقل گویه در سبد «مخالف»</label>
+          <input type="number" id="minDisagreeInput" min="0" max="100" value="20">
+        </div>
+      </div>
+      <div class="err-text" id="minReqError"></div>
+    </div>
+
+    <div class="card">
+      <h2>۵) قفل پنل پژوهشگر 🔒</h2>
+      <div class="row">
+        <input type="password" id="passwordInput" placeholder="رمز عبور (اختیاری)" autocomplete="new-password">
+        <button class="btn" id="togglePwdBtn" type="button">نمایش</button>
+        <button class="btn danger" id="clearPwdBtn" type="button">حذف رمز</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>۶) اتصال به سرور (Apps Script)</h2>
+      <p class="hint">آدرس Web App که از Apps Script گرفته‌اید را اینجا وارد کنید. برای فعال شدن لینک کوتاه و ذخیرهٔ پاسخ‌ها در Google Sheets الزامی است.</p>
+      <input type="url" id="endpointInput" placeholder="https://script.google.com/macros/s/.../exec">
+      <div class="row mt">
+        <button class="btn" id="testEndpointBtn">🔌 تست اتصال به سرور</button>
+        <span id="endpointStatus" class="muted" style="font-size:12.5px"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>۷) ذخیره و اشتراک‌گذاری</h2>
+      <p class="hint">ابتدا «ذخیره تنظیمات» را بزنید، سپس لینک کوتاه بسازید.</p>
+      <div class="row">
+        <button class="btn primary" id="saveConfigBtn">💾 ذخیره تنظیمات</button>
+        <button class="btn" id="shareLinkBtn">🔗 ساخت لینک کوتاه اشتراک‌گذاری</button>
+        <button class="btn" id="exportConfigBtn">⬇️ دانلود تنظیمات (JSON)</button>
+        <label class="btn" style="cursor:pointer">
+          ⬆️ بارگذاری تنظیمات
+          <input type="file" id="importFile" accept=".json" hidden>
+        </label>
+      </div>
+      <div class="row mt">
+        <input type="text" id="shareLink" readonly placeholder="لینک اشتراک‌گذاری اینجا نمایش داده می‌شود..." onclick="this.select()">
+        <button class="btn" id="copyLinkBtn">کپی</button>
+      </div>
+      <div class="link-box" style="display:none" id="linkInfoBox">
+        <div class="info">
+          ✅ لینک کوتاه ساخته شد. این لینک را برای شرکت‌کنندگان ارسال کنید.<br>
+          کد تنظیمات: <b id="linkKey"></b>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>۸) پاسخ‌های ثبت‌شده روی این مرورگر</h2>
+      <div class="row" style="margin-bottom:10px">
+        <span class="muted" id="respCount">۰ پاسخ</span>
+        <button class="btn" id="refreshResp">🔄 به‌روزرسانی</button>
+        <button class="btn primary" id="exportCsvBtn">⬇️ خروجی CSV</button>
+        <button class="btn primary" id="exportXlsxBtn">⬇️ خروجی اکسل (قالب پژوهش)</button>
+        <button class="btn danger" id="clearRespBtn">پاک کردن همه</button>
+      </div>
+      <div class="tbl-wrap">
+        <table id="respTable">
+          <thead><tr><th>#</th><th>شرکت‌کننده</th><th>تاریخ</th><th>خلاصه مرتب‌سازی</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="hint" style="margin-top:8px">توجه: پاسخ‌ها فقط در حافظهٔ همین مرورگر ذخیره می‌شوند. برای جمع‌آوری متمرکز، از Google Sheets استفاده کنید.</p>
+    </div>
+  </section>
+
+</div>
+
+<div id="pwdModal" class="modal-backdrop" style="display:none">
+  <div class="modal">
+    <div class="lock-ico">🔒</div>
+    <h3 style="text-align:center">دسترسی به پنل پژوهشگر</h3>
+    <p class="hint" style="text-align:center">این بخش فقط برای پژوهشگر قابل دسترسی است.</p>
+    <input type="password" id="pwdInput" placeholder="رمز عبور" autocomplete="current-password">
+    <div class="err-text" id="pwdErr"></div>
+    <div class="row" style="justify-content:flex-end;margin-top:6px">
+      <button class="btn" id="pwdCancel">انصراف</button>
+      <button class="btn primary" id="pwdOk">ورود</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   کیوسورت آنلاین — نسخهٔ نهایی با لینک کوتاه
+   ========================================================= */
+const VALUES = [-4,-3,-2,-1,0,1,2,3,4];
+const CATS = ['agree','neutral','disagree'];
+const CAT_FA = { agree:'موافق', neutral:'بی‌نظر', disagree:'مخالف' };
+const DEFAULT_DIST = [2,4,6,8,10,8,6,4,2];
+const DEFAULT_MIN_AGREE = 20;
+const DEFAULT_MIN_DISAGREE = 20;
+const LS_CONFIG = 'qsort_config_v6';
+const LS_RESP   = 'qsort_responses_v6';
+const SS_UNLOCK = 'qsort_researcher_unlocked';
+
+let config = {
+  title:'', items:[], distribution:[...DEFAULT_DIST], endpoint:'', presort:true, password:'',
+  minAgree: DEFAULT_MIN_AGREE, minDisagree: DEFAULT_MIN_DISAGREE
+};
+let session = null;
+let selectedId = null;
+let lastRecord = null;
+let poolFilter = 'all';
+let participantMode = false;
+let researcherUnlocked = false;
+
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const faNum = n => String(n).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+const toB64 = s => btoa(String.fromCharCode(...new TextEncoder().encode(s)));
+const fromB64 = s => new TextDecoder().decode(Uint8Array.from(atob(s), c => c.charCodeAt(0)));
+const toB64url = s => toB64(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+function fromB64url(s){
+  s = s.replace(/-/g,'+').replace(/_/g,'/');
+  while (s.length % 4) s += '=';
+  return fromB64(s);
+}
+function toast(msg, type){
+  const t = document.createElement('div');
+  t.className = 'toast' + (type ? ' ' + type : '');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(()=>t.classList.add('show'));
+  setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>t.remove(),300); }, 3000);
+}
+function download(name, content, type){
+  const blob = new Blob([content], {type: type || 'application/octet-stream'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1500);
+}
+function csvCell(v){ return '"' + String(v == null ? '' : v).replace(/"/g,'""') + '"'; }
+
+/* ---------- view switching ---------- */
+function switchView(name){
+  if (name === 'researcher' && participantMode) {
+    toast('این لینک مخصوص شرکت‌کنندگان است.', 'err');
+    return;
+  }
+  $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === name));
+  $$('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
+  if (name === 'researcher') { renderResponses(); updateDistPreview(); }
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+$$('.tab').forEach(t => t.addEventListener('click', () => {
+  const target = t.dataset.view;
+  if (target === 'researcher') {
+    if (participantMode) { toast('این لینک مخصوص شرکت‌کنندگان است.', 'err'); return; }
+    if (config.password && !researcherUnlocked) { openPwdModal(); return; }
+  }
+  switchView(target);
+}));
+
+/* ---------- password modal ---------- */
+function openPwdModal(){
+  $('#pwdModal').style.display = 'flex';
+  $('#pwdInput').value = '';
+  $('#pwdErr').textContent = '';
+  setTimeout(() => $('#pwdInput').focus(), 60);
+}
+function closePwdModal(){ $('#pwdModal').style.display = 'none'; }
+function tryUnlock(){
+  const v = $('#pwdInput').value;
+  if (v === config.password) {
+    researcherUnlocked = true;
+    try { sessionStorage.setItem(SS_UNLOCK, '1'); } catch(e){}
+    closePwdModal();
+    switchView('researcher');
+  } else {
+    $('#pwdErr').textContent = 'رمز عبور نادرست است.';
+  }
+}
+
+/* ---------- config ---------- */
+function showLoading(show){
+  $('#loadingBox').style.display = show ? 'block' : 'none';
+  if (show) {
+    $('#noConfig').style.display = 'none';
+    $('#participantApp').style.display = 'none';
+  }
+}
+function showError(msg){
+  showLoading(false);
+  $('#noConfig').style.display = 'block';
+  $('#noConfig').innerHTML = '<h2>خطا در بارگذاری</h2><p class="hint">' + msg + '</p>';
+}
+
+function bootFromHash(){
+  // ---------- حالت ۱: لینک قدیمی بلند #c=... ----------
+  if (location.hash.startsWith('#c=')) {
+    try {
+      const data = JSON.parse(fromB64url(location.hash.slice(3)));
+      if (Array.isArray(data.items) && data.items.length) {
+        config = Object.assign(config, data);
+        if (typeof config.presort !== 'boolean') config.presort = true;
+        if (typeof config.minAgree !== 'number') config.minAgree = DEFAULT_MIN_AGREE;
+        if (typeof config.minDisagree !== 'number') config.minDisagree = DEFAULT_MIN_DISAGREE;
+        participantMode = true;
+        return 'sync';
+      }
+    } catch(e) { console.warn('bad hash', e); }
+  }
+
+  // ---------- حالت ۲: لینک کوتاه #k=xxxxx ----------
+  if (location.hash.startsWith('#k=')) {
+    const key = location.hash.slice(3);
+    const params = new URLSearchParams(location.search);
+    const endpoint = params.get('s');
+    if (!endpoint) {
+      showError('آدرس سرور در لینک یافت نشد.');
+      return 'async';
+    }
+    participantMode = true;
+    showLoading(true);
+
+    fetch(endpoint + '?k=' + encodeURIComponent(key))
+      .then(r => r.json())
+      .then(res => {
+        if (res.status === 'ok' && res.config) {
+          config = Object.assign(config, res.config);
+          if (typeof config.presort !== 'boolean') config.presort = true;
+          if (typeof config.minAgree !== 'number') config.minAgree = DEFAULT_MIN_AGREE;
+          if (typeof config.minDisagree !== 'number') config.minDisagree = DEFAULT_MIN_DISAGREE;
+          config.endpoint = endpoint; // ذخیره برای ارسال پاسخ
+          showLoading(false);
+          fillResearcherForm();
+          applyConfig();
+          bindPresort();
+          bindQsort();
+          bindResearcher();
+          renderResponses();
+          switchView('participant');
+        } else {
+          showError('تنظیمات یافت نشد: ' + (res.message || 'کلید نامعتبر است.'));
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        showError('خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.');
+      });
+    return 'async';
+  }
+
+  return 'none';
+}
+
+function loadConfig(){
+  const saved = localStorage.getItem(LS_CONFIG);
+  if (saved) {
+    try { config = Object.assign(config, JSON.parse(saved)); } catch(e){}
+  }
+  if (typeof config.presort !== 'boolean') config.presort = true;
+  if (typeof config.password !== 'string') config.password = '';
+  if (typeof config.minAgree !== 'number') config.minAgree = DEFAULT_MIN_AGREE;
+  if (typeof config.minDisagree !== 'number') config.minDisagree = DEFAULT_MIN_DISAGREE;
+  try { if (sessionStorage.getItem(SS_UNLOCK) === '1') researcherUnlocked = true; } catch(e){}
+}
+
+function validateMinReq(){
+  const minA = +$('#minAgreeInput').value || 0;
+  const minD = +$('#minDisagreeInput').value || 0;
+  const nItems = config.items.length || 0;
+  const err = $('#minReqError');
+  if (nItems && (minA + minD) > nItems) {
+    err.textContent = `مجموع حداقل‌ها (${faNum(minA + minD)}) بیشتر از تعداد کل گویه‌ها (${faNum(nItems)}) است.`;
+    return false;
+  }
+  err.textContent = '';
+  return true;
+}
+
+function collectConfigFromForm(){
+  const items = $('#itemsInput').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const dist  = $('#distInput').value.split(/[,،\s]+/).map(Number).filter(n => !isNaN(n));
+  const title = $('#titleInput').value.trim();
+  const endpoint = $('#endpointInput').value.trim();
+  const presort = $('#presortToggle').checked;
+  const password = $('#passwordInput').value;
+  const minAgree = Math.max(0, +$('#minAgreeInput').value || 0);
+  const minDisagree = Math.max(0, +$('#minDisagreeInput').value || 0);
+  return { items, dist, title, endpoint, presort, password, minAgree, minDisagree };
+}
+
+function validateConfig(c){
+  if (c.items.length === 0) { toast('هیچ گویه‌ای وارد نشده است.', 'err'); return false; }
+  if (c.dist.length !== 9)  { toast('توزیع باید دقیقاً ۹ عدد باشد.', 'err'); return false; }
+  const sum = c.dist.reduce((a,b)=>a+b, 0);
+  if (sum !== c.items.length) {
+    toast(`مجموع ظرفیت‌ها (${faNum(sum)}) با تعداد گویه‌ها (${faNum(c.items.length)}) برابر نیست.`, 'err');
+    return false;
+  }
+  if (c.presort && (c.minAgree + c.minDisagree) > c.items.length) {
+    toast(`مجموع حداقل‌های موافق+مخالف (${faNum(c.minAgree+c.minDisagree)}) از تعداد گویه‌ها بیشتر است.`, 'err');
+    return false;
+  }
+  return true;
+}
+
+function saveConfig(){
+  const c = collectConfigFromForm();
+  if (!validateConfig(c)) return;
+  config = {
+    title: c.title, items: c.items, distribution: c.dist,
+    endpoint: c.endpoint, presort: c.presort, password: c.password,
+    minAgree: c.minAgree, minDisagree: c.minDisagree
+  };
+  localStorage.setItem(LS_CONFIG, JSON.stringify(config));
+  researcherUnlocked = true;
+  try { sessionStorage.setItem(SS_UNLOCK, '1'); } catch(e){}
+  applyConfig();
+  toast('تنظیمات ذخیره شد ✅', 'ok');
+}
+
+function applyConfig(){
+  const hasItems = config.items && config.items.length > 0;
+  $('#noConfig').style.display = hasItems ? 'none' : 'block';
+  $('#participantApp').style.display = hasItems ? 'block' : 'none';
+  $('#pTitle1').textContent = config.title || 'مرتب‌سازی مقدماتی';
+  $('#pTitle2').textContent = config.title ? config.title + ' — چینش نهایی' : 'چینش اجباری کیو';
+
+  const tab = document.querySelector('.tab[data-view="researcher"]');
+  if (tab) tab.style.display = participantMode ? 'none' : '';
+  if (!participantMode && tab) {
+    tab.textContent = config.password ? 'پژوهشگر 🔒' : 'پژوهشگر';
+  }
+
+  const minA = config.minAgree || 0;
+  const minD = config.minDisagree || 0;
+  $('#minRequirementText').innerHTML = `برای رفتن به مرحله بعد، باید <span class="req">حداقل ${faNum(minA)} گویه در «موافق»</span> و <span class="req">حداقل ${faNum(minD)} گویه در «مخالف»</span> قرار دهید.`;
+
+  if (hasItems) initSession();
+  if (!participantMode) fillResearcherForm();
+}
+
+function fillResearcherForm(){
+  $('#titleInput').value = config.title || '';
+  $('#itemsInput').value = (config.items || []).join('\n');
+  $('#distInput').value  = (config.distribution || DEFAULT_DIST).join(',');
+  $('#endpointInput').value = config.endpoint || '';
+  $('#presortToggle').checked = config.presort !== false;
+  $('#passwordInput').value = config.password || '';
+  $('#minAgreeInput').value = config.minAgree != null ? config.minAgree : DEFAULT_MIN_AGREE;
+  $('#minDisagreeInput').value = config.minDisagree != null ? config.minDisagree : DEFAULT_MIN_DISAGREE;
+  updateItemCount();
+  updateDistPreview();
+  validateMinReq();
+}
+
+/* ---------- session ---------- */
+function initSession(){
+  session = {
+    stage: config.presort ? 'presort' : 'qsort',
+    presort: { agree:[], neutral:[], disagree:[] },
+    presortPool: [],
+    columns: {},
+    pool: []
+  };
+  VALUES.forEach(v => session.columns[v] = []);
+  config.items.forEach((text, i) => {
+    session.presortPool.push({ id:i, text });
+    session.pool.push({ id:i, text });
+  });
+  selectedId = null;
+  poolFilter = 'all';
+  $('#doneView').style.display = 'none';
+  $('#participantApp').style.display = 'block';
+  renderAll();
+}
+function getPresortCat(id){
+  for (const c of CATS) {
+    if (session.presort[c].some(it => it.id === id)) return c;
+  }
+  return null;
+}
+function totalPresorted(){
+  return CATS.reduce((a,c) => a + session.presort[c].length, 0);
+}
+function totalPlaced(){
+  return VALUES.reduce((a,v) => a + session.columns[v].length, 0);
+}
+function renderAll(){
+  if (!session) return;
+  const isPresort = session.stage === 'presort';
+  $('#stagePresort').style.display = isPresort ? 'block' : 'none';
+  $('#stageQsort').style.display  = isPresort ? 'none'  : 'block';
+  if (isPresort) renderPresort();
+  else { renderPool(); renderBoard(); updateProgress2(); }
+}
+
+function makeChip(item, opts){
+  opts = opts || {};
+  const cat = getPresortCat(item.id);
+  const el = document.createElement('div');
+  el.className = 'chip' + (opts.inCol ? ' in-col' : '') + (selectedId === item.id ? ' selected' : '') + (cat ? ' with-dot' : '');
+  el.textContent = item.text;
+  el.title = (cat ? `دستهٔ مرحله ۱: ${CAT_FA[cat]}\n` : '') + (opts.inCol ? 'برای بازگرداندن کلیک کنید' : item.text);
+  el.dataset.id = item.id;
+  el.draggable = true;
+  el.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('text/plain', String(item.id));
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  if (cat) {
+    const dot = document.createElement('span');
+    dot.className = 'pdot ' + cat;
+    el.appendChild(dot);
+  }
+  return el;
+}
+
+/* =========================================================
+   STAGE 1 — PRESORT
+   ========================================================= */
+function renderPresort(){
+  const pool = $('#presortPool');
+  pool.innerHTML = '';
+  if (session.presortPool.length === 0) {
+    pool.innerHTML = '<div class="empty">همهٔ گویه‌ها دسته‌بندی شده‌اند ✅</div>';
+  } else {
+    [...session.presortPool].sort((a,b)=>a.id-b.id)
+      .forEach(it => pool.appendChild(makeChip(it, {inCol:false})));
+  }
+  CATS.forEach(cat => {
+    const body = $('#body' + cat.charAt(0).toUpperCase() + cat.slice(1));
+    body.innerHTML = '';
+    const arr = session.presort[cat];
+    if (!arr.length) body.innerHTML = '<div class="empty">اینجا خالی است</div>';
+    else arr.forEach(it => body.appendChild(makeChip(it, {inCol:false})));
+  });
+
+  const cntA = session.presort.agree.length;
+  const cntN = session.presort.neutral.length;
+  const cntD = session.presort.disagree.length;
+  $('#countAgree').textContent    = faNum(cntA);
+  $('#countNeutral').textContent  = faNum(cntN);
+  $('#countDisagree').textContent = faNum(cntD);
+
+  const minA = config.minAgree || 0;
+  const minD = config.minDisagree || 0;
+
+  $('#minNoteAgree').textContent = minA > 0
+    ? (cntA >= minA ? `حداقل ${faNum(minA)} گویه — تحقق یافت ✅` : `حداقل ${faNum(minA)} گویه — ${faNum(minA-cntA)} مورد دیگر لازم است`)
+    : 'بدون حداقل';
+  $('#minNoteAgree').className = 'min-note' + (minA > 0 ? (cntA >= minA ? ' ok' : ' bad') : '');
+  $('#minBarAgree').querySelector('i').style.width = minA > 0 ? Math.min(100, cntA/minA*100) + '%' : '100%';
+  $('#colAgree').classList.toggle('met', minA > 0 && cntA >= minA);
+  $('#colAgree').classList.toggle('unmet', minA > 0 && cntA < minA);
+
+  $('#minNoteDisagree').textContent = minD > 0
+    ? (cntD >= minD ? `حداقل ${faNum(minD)} گویه — تحقق یافت ✅` : `حداقل ${faNum(minD)} گویه — ${faNum(minD-cntD)} مورد دیگر لازم است`)
+    : 'بدون حداقل';
+  $('#minNoteDisagree').className = 'min-note' + (minD > 0 ? (cntD >= minD ? ' ok' : ' bad') : '');
+  $('#minBarDisagree').querySelector('i').style.width = minD > 0 ? Math.min(100, cntD/minD*100) + '%' : '100%';
+  $('#colDisagree').classList.toggle('met', minD > 0 && cntD >= minD);
+  $('#colDisagree').classList.toggle('unmet', minD > 0 && cntD < minD);
+
+  $('#colNeutral').classList.remove('met','unmet');
+
+  const total = config.items.length;
+  const placed = totalPresorted();
+  $('#progressText1').textContent = `${faNum(placed)} از ${faNum(total)}`;
+  $('#progressBar1').style.width = total ? (placed/total*100) + '%' : '0%';
+
+  const okAll = placed === total;
+  const okAgree = minA === 0 || cntA >= minA;
+  const okDisagree = minD === 0 || cntD >= minD;
+  const ready = okAll && okAgree && okDisagree;
+  $('#toQsortBtn').disabled = !ready;
+
+  const msgs = [];
+  if (!okAll) msgs.push(`${faNum(total - placed)} گویه هنوز دسته‌بندی نشده است.`);
+  if (!okAgree) msgs.push(`سبد «موافق» باید حداقل ${faNum(minA)} گویه داشته باشد (فعلاً ${faNum(cntA)}).`);
+  if (!okDisagree) msgs.push(`سبد «مخالف» باید حداقل ${faNum(minD)} گویه داشته باشد (فعلاً ${faNum(cntD)}).`);
+  const box = $('#readyMsg');
+  if (ready) {
+    box.className = 'ready-msg ok';
+    box.innerHTML = '✅ همهٔ شرایط تحقق یافت. می‌توانید به مرحله بعد بروید.';
+  } else {
+    box.className = 'ready-msg bad';
+    box.innerHTML = 'برای فعال شدن دکمهٔ ادامه، موارد زیر باید رعایت شود:' +
+      '<ul>' + msgs.map(m => '<li>' + m + '</li>').join('') + '</ul>';
+  }
+}
+function placePresort(id, cat){
+  if (CATS.indexOf(cat) < 0) return;
+  let item = null;
+  const k = session.presortPool.findIndex(x => x.id === id);
+  if (k > -1) item = session.presortPool.splice(k, 1)[0];
+  if (!item) {
+    for (const c of CATS) {
+      const arr = session.presort[c];
+      const j = arr.findIndex(x => x.id === id);
+      if (j > -1) { item = arr.splice(j, 1)[0]; break; }
+    }
+  }
+  if (!item) return;
+  session.presort[cat].push(item);
+  selectedId = null;
+  renderPresort();
+}
+function removeToPresortPool(id){
+  for (const c of CATS) {
+    const arr = session.presort[c];
+    const j = arr.findIndex(x => x.id === id);
+    if (j > -1) { session.presortPool.push(arr.splice(j, 1)[0]); break; }
+  }
+  selectedId = null;
+  renderPresort();
+}
+function bindPresort(){
+  $('#presortPool').addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    const id = +chip.dataset.id;
+    selectedId = (selectedId === id) ? null : id;
+    renderPresort();
+  });
+  CATS.forEach(cat => {
+    const body = $('#body' + cat.charAt(0).toUpperCase() + cat.slice(1));
+    body.addEventListener('click', e => {
+      const chip = e.target.closest('.chip');
+      if (chip) { removeToPresortPool(+chip.dataset.id); return; }
+      if (selectedId != null) placePresort(selectedId, cat);
+    });
+  });
+  CATS.forEach(cat => {
+    const col = document.querySelector('.presort-col[data-cat="' + cat + '"]');
+    col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('over'); });
+    col.addEventListener('dragleave', e => { if (!col.contains(e.relatedTarget)) col.classList.remove('over'); });
+    col.addEventListener('drop', e => {
+      e.preventDefault(); col.classList.remove('over');
+      const id = +e.dataTransfer.getData('text/plain');
+      placePresort(id, cat);
+    });
+  });
+  $('#presortPool').addEventListener('dragover', e => { e.preventDefault(); $('#presortPool').classList.add('dragover'); });
+  $('#presortPool').addEventListener('dragleave', () => $('#presortPool').classList.remove('dragover'));
+  $('#presortPool').addEventListener('drop', e => {
+    e.preventDefault(); $('#presortPool').classList.remove('dragover');
+    const id = +e.dataTransfer.getData('text/plain');
+    removeToPresortPool(id);
+  });
+  $('#resetPresort').addEventListener('click', () => {
+    if (confirm('همهٔ دسته‌بندی‌ها پاک شود؟')) {
+      session.presort = { agree:[], neutral:[], disagree:[] };
+      session.presortPool = config.items.map((text,i)=>({id:i,text}));
+      selectedId = null;
+      renderPresort();
+    }
+  });
+  $('#toQsortBtn').addEventListener('click', () => {
+    const minA = config.minAgree || 0;
+    const minD = config.minDisagree || 0;
+    const cntA = session.presort.agree.length;
+    const cntD = session.presort.disagree.length;
+    if (totalPresorted() !== config.items.length) {
+      toast('هنوز همهٔ گویه‌ها دسته‌بندی نشده‌اند.', 'err'); return;
+    }
+    if (cntA < minA) { toast(`سبد «موافق» باید حداقل ${faNum(minA)} گویه داشته باشد.`, 'err'); return; }
+    if (cntD < minD) { toast(`سبد «مخالف» باید حداقل ${faNum(minD)} گویه داشته باشد.`, 'err'); return; }
+
+    session.stage = 'qsort';
+    session.pool = config.items.map((text,i)=>({id:i,text}));
+    VALUES.forEach(v => session.columns[v] = []);
+    selectedId = null;
+    poolFilter = 'all';
+    renderAll();
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+}
+
+/* =========================================================
+   STAGE 2 — QSORT
+   ========================================================= */
+function renderPool(){
+  const pool = $('#pool');
+  pool.innerHTML = '';
+  const items = [...session.pool].sort((a,b)=>a.id-b.id).filter(it => {
+    if (poolFilter === 'all') return true;
+    return getPresortCat(it.id) === poolFilter;
+  });
+  if (items.length === 0) {
+    const d = document.createElement('div');
+    d.className = 'empty';
+    d.textContent = session.pool.length === 0
+      ? 'همهٔ گویه‌ها جای‌گذاری شده‌اند ✅'
+      : 'گویه‌ای با این فیلتر در فهرست نیست.';
+    pool.appendChild(d);
+    return;
+  }
+  items.forEach(it => pool.appendChild(makeChip(it, {inCol:false})));
+}
+function renderBoard(){
+  const board = $('#board');
+  board.innerHTML = '';
+  VALUES.forEach((v, i) => {
+    const cap = config.distribution[i];
+    const placed = session.columns[v].length;
+    const col = document.createElement('div');
+    col.className = 'qcol';
+    col.dataset.value = v;
+    const headCls = v < 0 ? 'neg' : (v > 0 ? 'pos' : 'zero');
+    const head = document.createElement('div');
+    head.className = 'qcol-head ' + headCls;
+    head.innerHTML = `<span>${v > 0 ? '+' + v : v}</span><span class="qcount">${faNum(placed)}/${faNum(cap)}</span>`;
+    col.appendChild(head);
+    const body = document.createElement('div');
+    body.className = 'qcol-body';
+    body.dataset.value = v;
+    for (let s = 0; s < cap; s++) {
+      const slot = document.createElement('div');
+      slot.className = 'slot';
+      const item = session.columns[v][s];
+      if (item) {
+        slot.classList.add('filled');
+        slot.appendChild(makeChip(item, {inCol:true}));
+      }
+      body.appendChild(slot);
+    }
+    col.appendChild(body);
+    board.appendChild(col);
+  });
+}
+function updateProgress2(){
+  const total = config.items.length;
+  const placed = totalPlaced();
+  $('#progressText2').textContent = `${faNum(placed)} از ${faNum(total)}`;
+  $('#progressBar2').style.width = total ? (placed/total*100) + '%' : '0%';
+  $('#submitBtn').disabled = placed < total;
+}
+function placeItem(id, value){
+  const idxVal = VALUES.indexOf(value);
+  if (idxVal < 0) return;
+  const cap = config.distribution[idxVal];
+  if (session.columns[value].length >= cap) {
+    toast(`ستون ${value > 0 ? '+' + value : value} پر است.`, 'err');
+    return;
+  }
+  let item = null;
+  for (const v of VALUES) {
+    const arr = session.columns[v];
+    const k = arr.findIndex(x => x.id === id);
+    if (k > -1) { item = arr.splice(k, 1)[0]; break; }
+  }
+  if (!item) {
+    const k = session.pool.findIndex(x => x.id === id);
+    if (k > -1) item = session.pool.splice(k, 1)[0];
+  }
+  if (!item) return;
+  session.columns[value].push(item);
+  selectedId = null;
+  renderPool(); renderBoard(); updateProgress2();
+}
+function removeToPool(id){
+  for (const v of VALUES) {
+    const arr = session.columns[v];
+    const k = arr.findIndex(x => x.id === id);
+    if (k > -1) { session.pool.push(arr.splice(k, 1)[0]); break; }
+  }
+  selectedId = null;
+  renderPool(); renderBoard(); updateProgress2();
+}
+function bindQsort(){
+  $('#pool').addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    const id = +chip.dataset.id;
+    selectedId = (selectedId === id) ? null : id;
+    renderPool();
+  });
+  $('#board').addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (chip) { removeToPool(+chip.dataset.id); return; }
+    const body = e.target.closest('.qcol-body');
+    if (body && selectedId != null) placeItem(selectedId, +body.dataset.value);
+  });
+  $('#board').addEventListener('dragover', e => { if (e.target.closest('.qcol')) e.preventDefault(); });
+  $('#board').addEventListener('dragenter', e => { const c = e.target.closest('.qcol'); if (c) c.classList.add('over'); });
+  $('#board').addEventListener('dragleave', e => { const c = e.target.closest('.qcol'); if (c && !c.contains(e.relatedTarget)) c.classList.remove('over'); });
+  $('#board').addEventListener('drop', e => {
+    $$('.qcol').forEach(c => c.classList.remove('over'));
+    const col = e.target.closest('.qcol');
+    if (!col) return;
+    e.preventDefault();
+    const id = +e.dataTransfer.getData('text/plain');
+    placeItem(id, +col.dataset.value);
+  });
+  $('#pool').addEventListener('dragover', e => { e.preventDefault(); $('#pool').classList.add('dragover'); });
+  $('#pool').addEventListener('dragleave', () => $('#pool').classList.remove('dragover'));
+  $('#pool').addEventListener('drop', e => {
+    e.preventDefault(); $('#pool').classList.remove('dragover');
+    const id = +e.dataTransfer.getData('text/plain');
+    removeToPool(id);
+  });
+  $$('#filterBar .fbtn').forEach(b => {
+    b.addEventListener('click', () => {
+      $$('#filterBar .fbtn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      poolFilter = b.dataset.filter;
+      renderPool();
+    });
+  });
+  $('#resetQsort').addEventListener('click', () => {
+    if (confirm('همهٔ چینش‌ها پاک شود؟')) {
+      session.pool = config.items.map((text,i)=>({id:i,text}));
+      VALUES.forEach(v => session.columns[v] = []);
+      selectedId = null;
+      renderAll();
+    }
+  });
+  $('#backToPresort').addEventListener('click', () => {
+    if (!config.presort) { toast('مرحله پیش‌دسته‌بندی در این پژوهش فعال نیست.', 'err'); return; }
+    if (!confirm('بازگشت به مرحله پیش‌دسته‌بندی باعث پاک شدن چینش فعلی می‌شود. ادامه؟')) return;
+    session.stage = 'presort';
+    VALUES.forEach(v => session.columns[v] = []);
+    session.pool = config.items.map((text,i)=>({id:i,text}));
+    selectedId = null;
+    renderAll();
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+  $('#submitBtn').addEventListener('click', submitResponse);
+}
+
+/* ---------- submit ---------- */
+function submitResponse(){
+  const total = config.items.length;
+  const placed = totalPlaced();
+  if (placed < total) {
+    toast(`هنوز ${faNum(total - placed)} گویه جای‌گذاری نشده است.`, 'err');
+    return;
+  }
+  const name = ($('#pName').value || '').trim() || 'ناشناس';
+  const record = {
+    participant: name,
+    timestamp: new Date().toISOString(),
+    title: config.title || '',
+    presortEnabled: !!config.presort,
+    minAgree: config.minAgree || 0,
+    minDisagree: config.minDisagree || 0,
+    sort: {},
+    presort: {},
+    columns: {}
+  };
+  VALUES.forEach(v => session.columns[v].forEach(it => record.sort[it.id] = v));
+  VALUES.forEach(v => record.columns[v] = session.columns[v].map(it => it.id));
+  if (config.presort) {
+    CATS.forEach(c => session.presort[c].forEach(it => record.presort[it.id] = c));
+  }
+
+  try {
+    const all = getResponses();
+    all.push(record);
+    localStorage.setItem(LS_RESP, JSON.stringify(all));
+  } catch(e) { console.warn(e); }
+
+  // ارسال به سرور فقط اگر endpoint در config یا URL باشد
+  const endpoint = config.endpoint || new URLSearchParams(location.search).get('s');
+  if (endpoint) {
+    sendToEndpoint(record, endpoint);
+    toast('پاسخ شما در حال ارسال به سرور است...');
+  } else {
+    toast('پاسخ ذخیره شد (بدون ارسال به سرور).', 'ok');
+  }
+
+  lastRecord = record;
+  $('#participantApp').style.display = 'none';
+  $('#doneView').style.display = 'block';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function sendToEndpoint(record, endpoint){
+  const payload = {
+    participant: record.participant,
+    timestamp: record.timestamp,
+    title: record.title,
+    items: config.items,
+    values: config.items.map((_, i) => record.sort[i] != null ? record.sort[i] : ''),
+    presort: config.items.map((_, i) => record.presort[i] || ''),
+    columns: record.columns || {}
+  };
+  const params = new URLSearchParams();
+  params.append('data', JSON.stringify(payload));
+  fetch(endpoint, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
+    body: params.toString()
+  }).catch(err => console.warn('endpoint error', err));
+}
+function downloadMyResponse(rec){
+  const head = ['participant','timestamp'];
+  config.items.forEach((t,i) => { head.push(`Q${i+1}`); head.push(`P${i+1}`); });
+  const row = [rec.participant, rec.timestamp];
+  config.items.forEach((_,i) => {
+    row.push(rec.sort[i] != null ? rec.sort[i] : '');
+    row.push(rec.presort[i] || '');
+  });
+  const csv = '\uFEFF' + [head,row].map(r => r.map(csvCell).join(',')).join('\r\n');
+  download('my-qsort-response.csv', csv, 'text/csv;charset=utf-8');
+}
+
+/* =========================================================
+   RESEARCHER: responses
+   ========================================================= */
+function getResponses(){
+  try { return JSON.parse(localStorage.getItem(LS_RESP) || '[]'); } catch(e){ return []; }
+}
+function renderResponses(){
+  const list = getResponses();
+  $('#respCount').textContent = faNum(list.length) + ' پاسخ';
+  const tb = $('#respTable').querySelector('tbody');
+  tb.innerHTML = '';
+  if (!list.length) {
+    tb.innerHTML = '<tr><td colspan="4" class="muted">پاسخی ثبت نشده است.</td></tr>';
+    return;
+  }
+  list.slice().reverse().forEach((r, i) => {
+    const tr = document.createElement('tr');
+    const summary = VALUES.slice().reverse().map(v => {
+      const n = Object.keys(r.sort).filter(k => r.sort[k] === v).length;
+      return `${v > 0 ? '+' + v : v}:${n}`;
+    }).join('  ');
+    let pre = '';
+    if (r.presortEnabled) {
+      pre = CATS.map(c => {
+        const n = Object.values(r.presort || {}).filter(x => x === c).length;
+        return `${CAT_FA[c]}:${n}`;
+      }).join(' / ');
+    }
+    const d = new Date(r.timestamp);
+    const dateStr = isNaN(d) ? r.timestamp : d.toLocaleString('fa-IR');
+    tr.innerHTML = `<td>${faNum(list.length - i)}</td>
+                    <td>${escapeHtml(r.participant)}</td>
+                    <td>${escapeHtml(dateStr)}</td>
+                    <td style="direction:rtl">
+                      <div style="font-family:monospace;direction:ltr;text-align:left">${escapeHtml(summary)}</div>
+                      ${pre ? `<div class="muted" style="font-size:11.5px;margin-top:3px">پیش‌دسته‌بندی — ${escapeHtml(pre)}</div>` : ''}
+                    </td>`;
+    tb.appendChild(tr);
+  });
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function exportCSV(){
+  const list = getResponses();
+  if (!list.length) { toast('پاسخی برای خروجی وجود ندارد.', 'err'); return; }
+  if (!config.items.length) { toast('گویه‌ای تعریف نشده است.', 'err'); return; }
+  const head = ['participant','timestamp'];
+  config.items.forEach((t,i) => { head.push(`Q${i+1}: ${t}`); head.push(`P${i+1}`); });
+  const rows = [head];
+  list.forEach(r => {
+    const row = [r.participant, r.timestamp];
+    config.items.forEach((_,i) => {
+      row.push(r.sort[i] != null ? r.sort[i] : '');
+      row.push(r.presort ? (r.presort[i] || '') : '');
+    });
+    rows.push(row);
+  });
+  const csv = '\uFEFF' + rows.map(r => r.map(csvCell).join(',')).join('\r\n');
+  download('qsort-results.csv', csv, 'text/csv;charset=utf-8');
+}
+function exportExcel(){
+  const list = getResponses();
+  if (!list.length) { toast('پاسخی برای خروجی وجود ندارد.', 'err'); return; }
+  if (!window.XLSX) { toast('کتابخانه اکسل بارگذاری نشد.', 'err'); return; }
+
+  const wb = XLSX.utils.book_new();
+  const usedNames = new Set();
+
+  list.forEach(rec => {
+    const rows = [['Respondent Name and Sort Value:', rec.participant || '']];
+    for (let v = -4; v <= 4; v++) {
+      let ids;
+      if (rec.columns && Array.isArray(rec.columns[v]) && rec.columns[v].length) {
+        ids = rec.columns[v];
+      } else {
+        ids = Object.keys(rec.sort)
+          .filter(k => rec.sort[k] === v)
+          .map(k => +k)
+          .sort((a, b) => a - b);
+      }
+      ids.forEach(id => rows.push([v, Number(id) + 1]));
+    }
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{ wch: 30 }, { wch: 12 }];
+
+    let name = String(rec.participant || 'Respondent')
+      .replace(/[\\\/\?\*\[\]:]/g, '_').trim().slice(0, 31) || 'Respondent';
+    const base = name; let n = 1;
+    while (usedNames.has(name)) name = base.slice(0, 28) + '_' + (++n);
+    usedNames.add(name);
+
+    XLSX.utils.book_append_sheet(wb, ws, name);
+  });
+
+  const fname = 'qsort-responses_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+  XLSX.writeFile(wb, fname);
+  toast('فایل اکسل ساخته شد ✅', 'ok');
+}
+
+/* =========================================================
+   RESEARCHER: UI
+   ========================================================= */
+function updateItemCount(){
+  const n = $('#itemsInput').value.split('\n').map(s=>s.trim()).filter(Boolean).length;
+  $('#itemCount').textContent = faNum(n) + ' گویه';
+  validateMinReq();
+}
+function updateDistPreview(){
+  const dist = $('#distInput').value.split(/[,،\s]+/).map(Number).filter(n => !isNaN(n));
+  const box = $('#distPreview');
+  const err = $('#distError');
+  box.innerHTML = '';
+  if (dist.length !== 9) {
+    err.textContent = 'تعداد اعداد باید ۹ باشد (فعلاً ' + faNum(dist.length) + ' عدد).';
+    return;
+  }
+  const sum = dist.reduce((a,b)=>a+b,0);
+  const nItems = $('#itemsInput').value.split('\n').map(s=>s.trim()).filter(Boolean).length;
+  VALUES.forEach((v,i) => {
+    const s = document.createElement('span');
+    s.innerHTML = `${v > 0 ? '+' + v : v} → <b>${faNum(dist[i])}</b>`;
+    box.appendChild(s);
+  });
+  const total = document.createElement('span');
+  total.innerHTML = `مجموع: <b>${faNum(sum)}</b>`;
+  box.appendChild(total);
+  if (nItems && sum !== nItems) {
+    err.textContent = `مجموع ظرفیت‌ها (${faNum(sum)}) با تعداد گویه‌ها (${faNum(nItems)}) برابر نیست.`;
+  } else {
+    err.textContent = '';
+  }
+}
+
+function bindResearcher(){
+  $('#itemsInput').addEventListener('input', () => { updateItemCount(); updateDistPreview(); });
+  $('#distInput').addEventListener('input', updateDistPreview);
+  $('#minAgreeInput').addEventListener('input', validateMinReq);
+  $('#minDisagreeInput').addEventListener('input', validateMinReq);
+  $('#presetDefault').addEventListener('click', () => {
+    $('#distInput').value = DEFAULT_DIST.join(',');
+    updateDistPreview();
+  });
+  $('#saveConfigBtn').addEventListener('click', saveConfig);
+
+  $('#togglePwdBtn').addEventListener('click', () => {
+    const inp = $('#passwordInput');
+    if (inp.type === 'password') { inp.type = 'text'; $('#togglePwdBtn').textContent = 'پنهان'; }
+    else { inp.type = 'password'; $('#togglePwdBtn').textContent = 'نمایش'; }
+  });
+  $('#clearPwdBtn').addEventListener('click', () => {
+    if (confirm('رمز عبور حذف شود؟')) {
+      $('#passwordInput').value = '';
+      config.password = '';
+      localStorage.setItem(LS_CONFIG, JSON.stringify(config));
+      researcherUnlocked = true;
+      try { sessionStorage.setItem(SS_UNLOCK, '1'); } catch(e){}
+      applyConfig();
+      toast('رمز حذف شد.', 'ok');
+    }
+  });
+
+  // تست اتصال به سرور
+  $('#testEndpointBtn').addEventListener('click', () => {
+    const ep = $('#endpointInput').value.trim();
+    const st = $('#endpointStatus');
+    if (!ep) { st.textContent = 'آدرس خالی است.'; st.style.color = '#b42318'; return; }
+    st.textContent = 'در حال تست...'; st.style.color = '#6b7280';
+    fetch(ep + '?k=__test__')
+      .then(r => r.json())
+      .then(res => {
+        if (res && (res.status === 'ok' || res.status === 'error')) {
+          st.textContent = '✅ اتصال برقرار است (پاسخ سرور: ' + res.status + ')';
+          st.style.color = '#067647';
+        } else {
+          st.textContent = '⚠️ پاسخ نامعتبر از سرور.';
+          st.style.color = '#b45309';
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        st.textContent = '❌ خطا در اتصال. آدرس را بررسی کنید.';
+        st.style.color = '#b42318';
+      });
+  });
+
+  // ساخت لینک کوتاه
+  $('#shareLinkBtn').addEventListener('click', () => {
+    const c = collectConfigFromForm();
+    if (!validateConfig(c)) return;
+    if (!c.endpoint) {
+      toast('برای لینک کوتاه، ابتدا آدرس Apps Script را وارد کنید.', 'err');
+      return;
+    }
+
+    const payload = {
+      title: c.title,
+      items: c.items,
+      distribution: c.dist,
+      presort: c.presort,
+      minAgree: c.minAgree,
+      minDisagree: c.minDisagree
+    };
+
+    // ذخیره محلی
+    config = Object.assign(config, payload, { endpoint: c.endpoint, password: c.password });
+    localStorage.setItem(LS_CONFIG, JSON.stringify(config));
+    researcherUnlocked = true;
+    try { sessionStorage.setItem(SS_UNLOCK, '1'); } catch(e){}
+    applyConfig();
+
+    toast('در حال ساخت لینک کوتاه...');
+    const body = new URLSearchParams();
+    body.append('data', JSON.stringify({ action: 'saveConfig', config: payload }));
+
+    fetch(c.endpoint, {
+      method: 'POST',
+      body: body.toString(),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' }
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status !== 'ok' || !res.key) {
+        toast('خطا در ساخت لینک: ' + (res.message || 'نامشخص'), 'err');
+        return;
+      }
+      const base = (location.origin && location.origin !== 'null')
+        ? location.origin + location.pathname
+        : location.href.split('#')[0];
+      const shortLink = base + '?s=' + encodeURIComponent(c.endpoint) + '#k=' + res.key;
+      $('#shareLink').value = shortLink;
+      $('#linkKey').textContent = res.key;
+      $('#linkInfoBox').style.display = 'flex';
+      toast('لینک کوتاه ساخته شد ✅', 'ok');
+    })
+    .catch(err => {
+      console.error(err);
+      toast('خطا در ارتباط با سرور.', 'err');
+    });
+  });
+
+  $('#copyLinkBtn').addEventListener('click', () => {
+    const inp = $('#shareLink');
+    if (!inp.value) { toast('ابتدا لینک را بسازید.', 'err'); return; }
+    inp.select();
+    navigator.clipboard.writeText(inp.value)
+      .then(()=>toast('کپی شد ✅','ok'))
+      .catch(()=>{ document.execCommand('copy'); toast('کپی شد ✅','ok'); });
+  });
+
+  $('#exportConfigBtn').addEventListener('click', () => {
+    const c = collectConfigFromForm();
+    const data = {
+      title: c.title, items: c.items, distribution: c.dist,
+      endpoint: c.endpoint, presort: c.presort, password: c.password,
+      minAgree: c.minAgree, minDisagree: c.minDisagree
+    };
+    download('qsort-config.json', JSON.stringify(data, null, 2), 'application/json');
+  });
+
+  $('#importFile').addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        const d = JSON.parse(rd.result);
+        if (!Array.isArray(d.items)) throw new Error('bad');
+        config = Object.assign({title:'',endpoint:'',presort:true,password:'',minAgree:DEFAULT_MIN_AGREE,minDisagree:DEFAULT_MIN_DISAGREE}, d);
+        localStorage.setItem(LS_CONFIG, JSON.stringify(config));
+        researcherUnlocked = true;
+        try { sessionStorage.setItem(SS_UNLOCK, '1'); } catch(e){}
+        applyConfig();
+        toast('تنظیمات بارگذاری شد ✅','ok');
+      } catch(err) { toast('فایل نامعتبر است.','err'); }
+    };
+    rd.readAsText(f);
+    e.target.value = '';
+  });
+
+  $('#refreshResp').addEventListener('click', () => { renderResponses(); toast('به‌روزرسانی شد'); });
+  $('#exportCsvBtn').addEventListener('click', exportCSV);
+  $('#exportXlsxBtn').addEventListener('click', exportExcel);
+  $('#clearRespBtn').addEventListener('click', () => {
+    if (confirm('همهٔ پاسخ‌های ذخیره‌شده در این مرورگر پاک شود؟')) {
+      localStorage.removeItem(LS_RESP);
+      renderResponses();
+      toast('پاک شد.');
+    }
+  });
+
+  $('#downloadMine').addEventListener('click', () => { if (lastRecord) downloadMyResponse(lastRecord); });
+  $('#newParticipant').addEventListener('click', () => {
+    $('#pName').value = '';
+    $('#doneView').style.display = 'none';
+    initSession();
+  });
+
+  $('#pwdOk').addEventListener('click', tryUnlock);
+  $('#pwdCancel').addEventListener('click', closePwdModal);
+  $('#pwdInput').addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+  $('#pwdModal').addEventListener('click', e => { if (e.target.id === 'pwdModal') closePwdModal(); });
+}
+
+/* =========================================================
+   BOOT
+   ========================================================= */
+document.addEventListener('DOMContentLoaded', () => {
+  const mode = bootFromHash();
+
+  if (mode === 'async') {
+    // در حالت لینک کوتاه، منتظر بارگذاری تنظیمات از سرور می‌مانیم
+    // (بقیه در داخل bootFromHash مدیریت شده)
+    return;
+  }
+
+  if (mode === 'none') loadConfig();
+
+  fillResearcherForm();
+  applyConfig();
+  bindPresort();
+  bindQsort();
+  bindResearcher();
+  renderResponses();
+
+  if (participantMode) {
+    switchView('participant');
+  } else if (config.items.length) {
+    switchView('participant');
+  } else {
+    switchView('researcher');
+  }
+});
+</script>
+</body>
+</html>
